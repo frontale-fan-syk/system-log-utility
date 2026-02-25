@@ -11,8 +11,8 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            background: #e6f7ff; /* 画面全体：ごく淡い水色 */
-            color: #333; 
+            background: #f0f0f2; /* 地味なグレーに */
+            color: #444; 
             padding-bottom: 50px; 
             margin: 0; 
         }
@@ -89,10 +89,10 @@
 <body>
 
     <div id="lock-screen">
-        <h1>Sayaka's Diary</h1>
-        <p>🐬 合言葉を入れてね 🐬</p>
-        <input type="password" id="pass-input" placeholder="パスワード">
-        <button id="unlock-btn">Go Frontale!</button>
+        <h1>System Console</h1>
+        <p>Unauthorized access is prohibited.</p>
+        <input type="password" id="pass-input" placeholder="User Password">
+        <button id="unlock-btn">Login</button>
     </div>
 
     <div class="calendar-header">
@@ -103,38 +103,44 @@
     <div id="calendar"></div>
     <div id="editor-area">
         <h3 id="selected-date-label">日付を選択してね</h3>
-        <label>予定</label>
+        <label>Status (アクション)</label>
         <select id="event-input">
-            <option value="">予定なし</option>
-            <option value="試合日">⚽ 試合日 (Frontale!)</option>
-            <option value="カウンセリング">👂 カウンセリング</option>
-            <option value="学校訪問">🏫 学校訪問</option>
+            <option value="">--</option>
+            <option value="外出">🏃 OUT (外出)</option>
+            <option value="帰宅">🏠 IN (帰宅)</option>
+            <option value="移動">🚗 Move (移動/車両)</option>
+            <option value="物品">🛍 Item (不審な荷物)</option>
         </select>
-        <label>気分</label>
-        <select id="category-input"><option value="">気分なし</option><option value="😊 うれしい">😊 うれしい</option><option value="🤔 ふしぎ">🤔 ふしぎ</option><option value="😲 びっくり">😲 びっくり</option><option value="😣 ざんねん">😣 ざんねん</option><option value="😞 かなしい">😞 かなしい</option><option value="😠 イライラ">😠 イライラ</option><option value="🌈 その他">🌈 その他</option></select>
-        <textarea id="diary-input" placeholder="今日の出来事は？"></textarea>
+
+        <label>Category (分類)</label>
+        <select id="category-input">
+            <option value="">--</option>
+            <option value="📍 場所">📍 Location (場所)</option>
+            <option value="👥 同伴">👥 Companion (同伴者)</option>
+            <option value="💰 支出">💰 Cost (支出/レシート)</option>
+            <option value="📝 備考">📝 Note (その他)</option>
+        </select>
+        <textarea id="diary-input" placeholder="アクション"></textarea>
         <button class="save-btn" id="save-btn">同期保存する</button>
         <button class="backup-btn" id="backup-btn">📥 全データを保存(バックアップ)</button>
     </div>
     <div class="section-title"><h3>🔍 振り返り</h3></div>
     <div class="filter-group">
-        <select id="filter-event">
+        <select id="event-input">
             <option value="none">ー (指定なし)</option>
-            <option value="all">すべての予定 (月間表示)</option>
-            <option value="試合日">⚽ 試合日</option>
-            <option value="カウンセリング">👂 カウンセリング</option>
-            <option value="学校訪問">🏫 学校訪問</option>
+            <option value="all">すべてのアクション (月間表示)</option>
+            <option value="外出">🏃 OUT (外出)</option>
+            <option value="帰宅">🏠 IN (帰宅)</option>
+            <option value="移動">🚗 Move (移動/車両)</option>
+            <option value="物品">🛍 Item (不審な荷物)</option>
         </select>
-        <select id="filter-mood">
+        <select id="category-input">
             <option value="none">ー (指定なし)</option>
             <option value="all">すべての気分 (月間表示)</option>
-            <option value="😊 うれしい">😊 うれしい</option>
-            <option value="🤔 ふしぎ">🤔 ふしぎ</option>
-            <option value="😲 びっくり">😲 びっくり</option>
-            <option value="😣 ざんねん">😣 ざんねん</option>
-            <option value="😞 かなしい">😞 かなしい</option>
-            <option value="😠 イライラ">😠 イライラ</option>
-            <option value="🌈 その他">🌈 その他</option>
+            <option value="📍 場所">📍 Location (場所)</option>
+            <option value="👥 同伴">👥 Companion (同伴者)</option>
+            <option value="💰 支出">💰 Cost (支出/レシート)</option>
+            <option value="📝 備考">📝 Note (その他)</option>
         </select>
     </div>
     <div id="history-list" class="list-container"></div>
@@ -144,19 +150,19 @@
         import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyCKTYQlERzcbsLWng8Y6E3yKcuK8kn0r7U",
-            authDomain: "sayaka-diary.firebaseapp.com",
-            projectId: "sayaka-diary",
-            storageBucket: "sayaka-diary.firebasestorage.app",
-            messagingSenderId: "1095135376250",
-            appId: "1:1095135376250:web:5301396cba61e67bbfdcc3"
+            apiKey: "AIzaSyD-BUPePOQhznXLV_yPjRnCVVUU2GYvzwM",
+            authDomain: "system-log-utility.firebaseapp.com",
+            projectId: "system-log-utility",
+            storageBucket: "system-log-utility.firebasestorage.app",
+            messagingSenderId: "730533909596",
+            appId: "1:730533909596:web:aae0a5444253719003c299"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         // 🔑 パスワード設定（ここに自分の好きな文字を！）
-        const CORRECT_PASSWORD = "9*#FgYJZF3!MI%5@80"; 
+        const CORRECT_PASSWORD = "k29%vK&sa%m*3Ix5#9"; 
 
         document.getElementById('unlock-btn').onclick = () => {
             const input = document.getElementById('pass-input').value;
@@ -269,7 +275,9 @@
             let items = snap.exists() ? snap.data().items : [];
             items.push({ text: text, category: document.getElementById('category-input').value, event: document.getElementById('event-input').value });
             await setDoc(docRef, { items: items });
-            document.getElementById('diary-input').value = "";
+            const now = new Date();
+            const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            document.getElementById('diary-input').value = `【${time}】 `;
             await loadData();
             alert("保存しました！");
         };

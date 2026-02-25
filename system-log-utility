@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sayaka's Diary</title>
+    <style>
+        /* 全体デザイン：淡い水色（リラックスできる色） */
+        body { 
+            font-family: -apple-system, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: #e6f7ff; /* 画面全体：ごく淡い水色 */
+            color: #333; 
+            padding-bottom: 50px; 
+            margin: 0; 
+        }
+        
+        /* 🔒 ロック画面：鮮やかなフロンターレブルー */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #00a0e9; /* ロック画面：フロンターレっぽい鮮やかな青 */
+            color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: 0.5s;
+        }
+        #lock-screen h1 { margin-bottom: 10px; font-size: 2rem; }
+        #lock-screen input {
+            padding: 15px; border-radius: 10px; border: 2px solid #0078b3; width: 200px;
+            font-size: 18px; text-align: center; margin-bottom: 20px; outline: none;
+        }
+        #lock-screen button {
+            padding: 10px 40px; border-radius: 25px; border: 2px solid white;
+            background: white; color: #00a0e9; font-weight: bold; cursor: pointer; font-size: 16px;
+        }
+
+        /* アプリ本体のレイアウト */
+        .calendar-header { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 15px 0; width: 100%; }
+        .nav-btn { background: #0078d4; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        h2 { color: #0078d4; margin: 0; font-size: 1.2rem; text-align: center; }
+        
+        #calendar { 
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; 
+            max-width: 450px; width: 92%; background: white; padding: 10px; 
+            border-radius: 15px; box-shadow: 0 10px 25px rgba(0,100,200,0.1); 
+        }
+        .weekday { text-align: center; font-size: 12px; font-weight: bold; color: #999; padding: 5px 0; }
+        .day { 
+            aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; cursor: pointer; 
+            font-size: 14px; border: 1px solid #f0f8ff; background: #fff; position: relative; min-height: 50px; 
+        }
+        
+        /* 土日は青と赤 */
+        .sun, .holiday { color: #ff4d4d !important; background: #fff5f5; }
+        .sat { color: #0056b3; background: #f0f4ff; }
+        .today { border: 2px solid #00a0e9 !important; font-weight: bold; }
+        .selected { background: #ccebff !important; border: 2px solid #0078d4 !important; }
+        .mark-any { width: 6px; height: 6px; background: #00a0e9; border-radius: 50%; margin-top: 2px; }
+        
+        /* 入力エリア */
+        #editor-area { 
+            margin-top: 20px; width: 92%; max-width: 450px; background: white; 
+            padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            box-sizing: border-box; 
+        }
+        select, textarea { 
+            width: 100%; border-radius: 8px; border: 1px solid #cce0ff; padding: 12px; 
+            box-sizing: border-box; font-size: 16px; margin-bottom: 15px; background-color: #fcfdff; 
+        }
+        textarea { height: 100px; resize: none; }
+        .save-btn { background: #00a0e9; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .backup-btn { background: #666; color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-size: 14px; cursor: pointer; margin-top: 10px; }
+        
+        /* 振り返りエリア */
+        .section-title { width: 92%; max-width: 450px; color: #0078d4; margin-top: 30px; }
+        .filter-group { display: flex; gap: 8px; width: 92%; max-width: 450px; margin-bottom: 15px; }
+        .list-container { width: 92%; max-width: 450px; }
+        .history-item { 
+            background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); border-left: 5px solid #00a0e9; 
+            position: relative; 
+        }
+        .history-header { display: flex; justify-content: space-between; border-bottom: 1px solid #e6f0ff; padding-bottom: 5px; margin-bottom: 8px; font-size: 14px; font-weight: bold; color: #0078d4; }
+        .delete-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <h1>Sayaka's Diary</h1>
+        <p>🐬 合言葉を入れてね 🐬</p>
+        <input type="password" id="pass-input" placeholder="パスワード">
+        <button id="unlock-btn">Go Frontale!</button>
+    </div>
+
+    <div class="calendar-header">
+        <button class="nav-btn" id="prev-btn">◀</button>
+        <h2 id="currentMonthYear"></h2>
+        <button class="nav-btn" id="next-btn">▶</button>
+    </div>
+    <div id="calendar"></div>
+    <div id="editor-area">
+        <h3 id="selected-date-label">日付を選択してね</h3>
+        <label>予定</label>
+        <select id="event-input">
+            <option value="">予定なし</option>
+            <option value="試合日">⚽ 試合日 (Frontale!)</option>
+            <option value="カウンセリング">👂 カウンセリング</option>
+            <option value="学校訪問">🏫 学校訪問</option>
+        </select>
+        <label>気分</label>
+        <select id="category-input"><option value="">気分なし</option><option value="😊 うれしい">😊 うれしい</option><option value="🤔 ふしぎ">🤔 ふしぎ</option><option value="😲 びっくり">😲 びっくり</option><option value="😣 ざんねん">😣 ざんねん</option><option value="😞 かなしい">😞 かなしい</option><option value="😠 イライラ">😠 イライラ</option><option value="🌈 その他">🌈 その他</option></select>
+        <textarea id="diary-input" placeholder="今日の出来事は？"></textarea>
+        <button class="save-btn" id="save-btn">同期保存する</button>
+        <button class="backup-btn" id="backup-btn">📥 全データを保存(バックアップ)</button>
+    </div>
+    <div class="section-title"><h3>🔍 振り返り</h3></div>
+    <div class="filter-group">
+        <select id="filter-event">
+            <option value="none">ー (指定なし)</option>
+            <option value="all">すべての予定 (月間表示)</option>
+            <option value="試合日">⚽ 試合日</option>
+            <option value="カウンセリング">👂 カウンセリング</option>
+            <option value="学校訪問">🏫 学校訪問</option>
+        </select>
+        <select id="filter-mood">
+            <option value="none">ー (指定なし)</option>
+            <option value="all">すべての気分 (月間表示)</option>
+            <option value="😊 うれしい">😊 うれしい</option>
+            <option value="🤔 ふしぎ">🤔 ふしぎ</option>
+            <option value="😲 びっくり">😲 びっくり</option>
+            <option value="😣 ざんねん">😣 ざんねん</option>
+            <option value="😞 かなしい">😞 かなしい</option>
+            <option value="😠 イライラ">😠 イライラ</option>
+            <option value="🌈 その他">🌈 その他</option>
+        </select>
+    </div>
+    <div id="history-list" class="list-container"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKTYQlERzcbsLWng8Y6E3yKcuK8kn0r7U",
+            authDomain: "sayaka-diary.firebaseapp.com",
+            projectId: "sayaka-diary",
+            storageBucket: "sayaka-diary.firebasestorage.app",
+            messagingSenderId: "1095135376250",
+            appId: "1:1095135376250:web:5301396cba61e67bbfdcc3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 🔑 パスワード設定（ここに自分の好きな文字を！）
+        const CORRECT_PASSWORD = "9*#FgYJZF3!MI%5@80"; 
+
+        document.getElementById('unlock-btn').onclick = () => {
+            const input = document.getElementById('pass-input').value;
+            if (input === CORRECT_PASSWORD) {
+                document.getElementById('lock-screen').style.opacity = "0";
+                setTimeout(() => { document.getElementById('lock-screen').style.display = "none"; }, 500);
+                loadData();
+            } else { alert("合言葉が違うみたいだよ。"); }
+        };
+
+        let currentViewDate = new Date();
+        let selectedDateStr = "";
+        let allDiaryData = {};
+        const holidays2026 = { "01-01":"元日", "01-12":"成人の日", "02-11":"建国記念の日", "02-23":"天皇誕生日", "03-20":"春分の日", "04-29":"昭和の日", "05-03":"憲法記念日", "05-04":"みどりの日", "05-05":"こどもの日", "05-06":"振替休日", "07-20":"海の日", "08-11":"山の日", "09-21":"敬老の日", "09-22":"国民の休日", "09-23":"秋分の日", "10-12":"スポーツの日", "11-03":"文化の日", "11-23":"勤労感謝の日" };
+
+        function renderCalendarOnly() {
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            const monthStr = String(month + 1).padStart(2, '0');
+            document.getElementById('currentMonthYear').innerText = `${year}年 ${month + 1}月`;
+            const calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = '<div class="weekday sun">日</div><div class="weekday">月</div><div class="weekday">火</div><div class="weekday">水</div><div class="weekday">木</div><div class="weekday">金</div><div class="weekday sat">土</div>';
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            for (let i = 0; i < firstDay; i++) { calendarEl.innerHTML += '<div></div>'; }
+            for (let d = 1; d <= lastDate; d++) {
+                const dateStr = `${year}-${monthStr}-${String(d).padStart(2, '0')}`;
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                dayDiv.innerText = d;
+                const dayOfWeek = new Date(year, month, d).getDay();
+                if (dayOfWeek === 0) dayDiv.classList.add('sun');
+                if (dayOfWeek === 6) dayDiv.classList.add('sat');
+                if (year === 2026 && holidays2026[dateStr.slice(5)]) dayDiv.classList.add('holiday');
+                if (dateStr === selectedDateStr) dayDiv.classList.add('selected');
+                if (allDiaryData[dateStr] && allDiaryData[dateStr].length > 0) {
+                    const mark = document.createElement('div');
+                    mark.className = 'mark-any';
+                    dayDiv.appendChild(mark);
+                }
+                dayDiv.onclick = () => {
+                    selectedDateStr = dateStr;
+                    document.getElementById('selected-date-label').innerText = `${month + 1}月 ${d}日の記録`;
+
+                    // ★ 追加：日付をクリックした瞬間に、絞り込みを「指定なし」にリセットする
+                    document.getElementById('filter-event').value = "none";
+                    document.getElementById('filter-mood').value = "none";
+
+                    renderCalendarOnly();
+                    updateHistoryList();
+                };
+                calendarEl.appendChild(dayDiv);
+            }
+        }
+
+        function updateHistoryList() {
+            const listEl = document.getElementById('history-list');
+            const fEvent = document.getElementById('filter-event').value;
+            const fMood = document.getElementById('filter-mood').value;
+            listEl.innerHTML = "";
+
+            // 現在表示している年と月を取得
+            const year = currentViewDate.getFullYear();
+            const monthStr = String(currentViewDate.getMonth() + 1).padStart(2, '0');
+            const currentMonthPrefix = `${year}-${monthStr}`;
+
+            // 「ー (指定なし)」以外が選ばれていれば、月間絞り込みモードとする
+            const isFiltering = (fEvent !== 'none' || fMood !== 'none');
+
+            Object.keys(allDiaryData).sort().reverse().forEach(date => {
+                let shouldShow = false;
+
+                if (isFiltering) {
+                    // ルール2：絞り込み中は「今開いている月」のものをすべて対象にする
+                    shouldShow = date.startsWith(currentMonthPrefix);
+                } else {
+                    // ルール1：両方「ー」の時は「クリックした日」だけを対象にする
+                    shouldShow = (date === selectedDateStr);
+                }
+
+                if (shouldShow) {
+                    allDiaryData[date].forEach((item, idx) => {
+                        // "none" や "all" の場合は制限をかけず、それ以外は一致するものだけ残す
+                        const matchEvent = (fEvent === 'none' || fEvent === 'all' || item.event === fEvent);
+                        const matchMood = (fMood === 'none' || fMood === 'all' || item.category === fMood);
+
+                        if (matchEvent && matchMood) {
+                            const div = document.createElement('div');
+                            div.className = 'history-item';
+                            div.innerHTML = `<div class="history-header"><span>${date} ${item.category || ''} ${item.event ? '【'+item.event+'】' : ''}</span><button class="delete-btn" onclick="deleteItem('${date}', ${idx})">×</button></div><div style="white-space:pre-wrap;">${item.text}</div>`;
+                            listEl.appendChild(div);
+                        }
+                    });
+                }
+            });
+        }
+        async function loadData() {
+            const querySnapshot = await getDocs(collection(db, "diaries"));
+            allDiaryData = {};
+            querySnapshot.forEach(docSnap => { allDiaryData[docSnap.id] = docSnap.data().items || []; });
+            renderCalendarOnly();
+            updateHistoryList();
+        }
+
+        document.getElementById('save-btn').onclick = async () => {
+            const text = document.getElementById('diary-input').value;
+            if(!selectedDateStr || !text) return alert("日付選択と入力をしてくださいね");
+            const docRef = doc(db, "diaries", selectedDateStr);
+            const snap = await getDoc(docRef);
+            let items = snap.exists() ? snap.data().items : [];
+            items.push({ text: text, category: document.getElementById('category-input').value, event: document.getElementById('event-input').value });
+            await setDoc(docRef, { items: items });
+            document.getElementById('diary-input').value = "";
+            await loadData();
+            alert("保存しました！");
+        };
+
+        window.deleteItem = async (date, index) => {
+            if(!confirm("この記録を消してもいいですか？")) return;
+            const docRef = doc(db, "diaries", date);
+            let items = allDiaryData[date];
+            items.splice(index, 1);
+            if (items.length === 0) await deleteDoc(docRef);
+            else await setDoc(docRef, { items: items });
+            await loadData();
+        };
+
+        document.getElementById('backup-btn').onclick = () => {
+            const blob = new Blob([JSON.stringify(allDiaryData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url;
+            a.download = `diary_backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        };
+
+        document.getElementById('prev-btn').onclick = () => { currentViewDate.setMonth(currentViewDate.getMonth() - 1); renderCalendarOnly(); };
+        document.getElementById('next-btn').onclick = () => { currentViewDate.setMonth(currentViewDate.getMonth() + 1); renderCalendarOnly(); };
+        document.getElementById('filter-event').onchange = updateHistoryList;
+        document.getElementById('filter-mood').onchange = updateHistoryList;
+
+        renderCalendarOnly();
+    </script>
+</body>
+</html>
+
+

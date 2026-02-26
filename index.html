@@ -256,6 +256,10 @@
                 div.innerHTML = `
                     <div class="history-header">
                         <span>${item.event || ''} - ${item.category || ''}</span>
+                        <div>
+                            <button onclick="editItem('${selectedDateStr}', ${idx})" style="background:none; border:none; color:#3498db; cursor:pointer; margin-right:10px;">✎</button>
+                            <button onclick="deleteItem('${selectedDateStr}', ${idx})" style="background:none; border:none; color:#ccc; cursor:pointer;">×</button>
+                        </div>
                     </div>
                     <div style="white-space:pre-wrap;">${item.text}</div>`;
                 listEl.appendChild(div);

@@ -266,6 +266,35 @@
             });
         }
 
+        // 編集機能
+        window.editItem = (date, index) => {
+            const item = allDiaryData[date][index];
+            selectedDateStr = date;
+            
+            document.getElementById('event-input').value = item.event || "";
+            document.getElementById('category-input').value = item.category || "";
+            document.getElementById('diary-input').value = item.text;
+            
+            // 編集中の情報を一時保存
+            window.editingInfo = { date: date, index: index };
+            
+            document.getElementById('editor-area').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        };
+
+        // 削除機能
+        window.deleteItem = async (date, index) => {
+            if(!confirm("このログを完全に削除しますか？")) return;
+            const docRef = doc(db, "logs", date);
+            let items = allDiaryData[date];
+            items.splice(index, 1); // 指定した番号のデータを消す
+            
+            if (items.length === 0) await deleteDoc(docRef);
+            else await setDoc(docRef, { items: items });
+            
+            await loadData(); // データを再読み込み
+        };
+
         document.getElementById('prev-btn').onclick = () => { currentViewDate.setMonth(currentViewDate.getMonth() - 1); renderCalendarOnly(); };
         document.getElementById('next-btn').onclick = () => { currentViewDate.setMonth(currentViewDate.getMonth() + 1); renderCalendarOnly(); };
         document.getElementById('overlay').onclick = () => { document.getElementById('editor-area').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; };

@@ -232,13 +232,32 @@
         document.getElementById('save-btn').onclick = async () => {
             const text = document.getElementById('diary-input').value;
             if(!text) return;
+            
             const docRef = doc(db, "logs", selectedDateStr);
             let items = allDiaryData[selectedDateStr] || [];
-            items.push({ 
-                text: text, 
-                category: document.getElementById('category-input').value, 
-                event: document.getElementById('event-input').value 
-            });
+
+            // もし編集モードなら、古いデータを一旦消す
+            if (window.editingInfo) {
+                const oldDate = window.editingInfo.date;
+                const oldIdx = window.editingInfo.index;
+                // 同じ日付の編集なら、その位置のデータを更新
+                if (oldDate === selectedDateStr) {
+                    items[oldIdx] = { 
+                        text: text, 
+                        category: document.getElementById('category-input').value, 
+                        event: document.getElementById('event-input').value 
+                    };
+                }
+                window.editingInfo = null; // 編集モード終了
+            } else {
+                // 新規保存の場合
+                items.push({ 
+                    text: text, 
+                    category: document.getElementById('category-input').value, 
+                    event: document.getElementById('event-input').value 
+                });
+            }
+
             await setDoc(docRef, { items: items });
             document.getElementById('editor-area').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
